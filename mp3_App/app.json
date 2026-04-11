@@ -1,27 +1,52 @@
 {
   "expo": {
-    "name": "mp3_App",
-    "slug": "mp3_App",
+    "name": "Music App",
+    "slug": "music-app",
     "version": "1.0.0",
+    "scheme": "musicapp",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      }
+    },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundColor": "#0F172A"
+      },
       "permissions": [
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_AUDIO",
-        "android.permission.READ_MEDIA_IMAGES"
-      ],
-      "package": "com.seuusuario.mp3app"
+        "FOREGROUND_SERVICE",
+        "WAKE_LOCK",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [
-  [
-    "expo-media-library",
-    {
-      "photosPermission": "Permitir acesso às músicas.",
-      "savePhotosPermission": "Permitir salvar arquivos.",
-      "isAccessMediaLocationEnabled": true,
-      "grantItemPermission": true
+      "expo-router",
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
+      ]
+    ],
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "be083434-c7d4-4a11-bc72-177089051d7f"
+      }
     }
-  ]
-]
+  }
+}
