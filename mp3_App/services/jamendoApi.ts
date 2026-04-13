@@ -1,4 +1,4 @@
-const JAMENDO_CLIENT_ID = '7d36e37a'; 
+const JAMENDO_CLIENT_ID = '79fe67b2'; 
 const BASE_URL = 'https://api.jamendo.com/v3.0';
 
 export interface JamendoTrack {
