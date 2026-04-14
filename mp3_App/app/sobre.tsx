@@ -1,30 +1,50 @@
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React from 'react';
+import { View, Text, Image, StyleSheet, SafeAreaView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Sobre() {
   return (
-    <LinearGradient colors={['#0f1123', '#1a1c3d']} style={styles.container}>
-      <LinearGradient colors={['#a044ff', '#6a5ae0']} style={styles.logoContainer}>
-         <Image source={require('../assets/icon.png')} style={styles.logoIcon} />
-      </LinearGradient>
-      
-      <Text style={styles.title}>Sobre</Text>
-      <Text style={styles.description}>
-        Music App é um aplicativo de streaming de música que oferece milhões de faixas, 
-        playlists personalizadas e descoberta musical baseada em seus gostos. 
-        Desfrute de uma experiência auditiva premium com qualidade de som excepcional.
-      </Text>
-      
-      <Text style={styles.version}>Versão 1.0.0</Text>
+    <LinearGradient colors={['#0f1123', '#1a1c3d']} style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          
+          {/* USANDO SUA LOGO OFICIAL */}
+          <Image 
+            source={require('../assets/icon.png')} 
+            style={styles.logo} 
+          />
+          
+          <Text style={styles.title}>Music App</Text>
+          
+          <Text style={styles.description}>
+            Seu aplicativo de streaming definitivo. Desfrute de uma experiência auditiva premium com qualidade de som excepcional.
+          </Text>
+
+          <View style={styles.footer}>
+            <Text style={styles.version}>Versão 1.0.0</Text>
+          </View>
+        </View>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-  logoContainer: { width: 120, height: 120, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 30 },
-  logoIcon: { width: 60, height: 60, tintColor: 'white' },
-  title: { color: 'white', fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  description: { color: '#a0a3bd', fontSize: 16, textAlign: 'center', lineHeight: 24 },
-  version: { color: '#5e617d', marginTop: 40 }
+  container: { flex: 1 },
+  content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
+  logo: { 
+    width: 150, 
+    height: 150, 
+    borderRadius: 35, // Bordas arredondadas para combinar com seus cards
+    marginBottom: 25 
+  },
+  title: { color: 'white', fontSize: 28, fontWeight: 'bold', marginBottom: 15 },
+  description: { 
+    color: 'rgba(255,255,255,0.7)', 
+    textAlign: 'center', 
+    fontSize: 16, 
+    lineHeight: 24 
+  },
+  footer: { marginTop: 40 },
+  version: { color: 'rgba(255,255,255,0.3)', fontSize: 14 }
 });
