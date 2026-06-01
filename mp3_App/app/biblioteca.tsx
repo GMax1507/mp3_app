@@ -3,6 +3,7 @@ import { View, Text, ScrollView, StyleSheet, SafeAreaView, TouchableOpacity, Ale
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { usePlayer } from '../context/PlayerContext';
+import { useTheme } from '../context/ThemeContext'; // 1. Importando o contexto de tema
 import TrackCard from '../components/TrackCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -17,6 +18,7 @@ const GENRES = [
 
 export default function Biblioteca() {
   const { favorites, recentTracks, playTrack, currentTrack } = usePlayer();
+  const { themeColors } = useTheme(); // 2. Capturando as cores escolhidas globalmente
   
   // viewMode agora suporta o modo 'genero'
   const [viewMode, setViewMode] = useState<'recentes' | 'curtidas' | 'genero'>('recentes');
@@ -60,7 +62,8 @@ export default function Biblioteca() {
   }
 
   return (
-    <LinearGradient colors={['#0f1123', '#1a1c3d']} style={{ flex: 1 }}>
+    // 3. Modificado aqui para aceitar as cores vindas do estado global do app
+    <LinearGradient colors={themeColors} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 120 }}>
           <Text style={styles.mainTitle}>Biblioteca</Text>
@@ -78,7 +81,7 @@ export default function Biblioteca() {
                 </View>
                 <View style={styles.cardTextContainer}>
                   <Text style={styles.cardTitle}>Tocadas recentemente</Text>
-                  <Text style={styles.cardSub}>{recentTracks.length} músicas</Text>
+                  <Text style={styles.cardSub}>{(recentTracks || []).length} músicas</Text>
                 </View>
                 <Ionicons name={viewMode === 'recentes' ? "chevron-down" : "chevron-forward"} size={20} color="white" />
               </LinearGradient>
@@ -95,7 +98,7 @@ export default function Biblioteca() {
                 </View>
                 <View style={styles.cardTextContainer}>
                   <Text style={styles.cardTitle}>Músicas curtidas</Text>
-                  <Text style={styles.cardSub}>{favorites.length} músicas</Text>
+                  <Text style={styles.cardSub}>{(favorites || []).length} músicas</Text>
                 </View>
                 <Ionicons name={viewMode === 'curtidas' ? "chevron-down" : "chevron-forward"} size={20} color="white" />
               </LinearGradient>
@@ -109,11 +112,11 @@ export default function Biblioteca() {
                viewMode === 'curtidas' ? 'Suas favoritas' : `Playlist: ${selectedGenre?.name}`}
             </Text>
             
-            {viewMode === 'recentes' && recentTracks.map((item: any) => (
+            {viewMode === 'recentes' && (recentTracks || []).map((item: any) => (
               <TrackCard key={`rec-${item.id}`} track={item} onPress={() => playTrack(item)} />
             ))}
 
-            {viewMode === 'curtidas' && favorites.map((item: any) => (
+            {viewMode === 'curtidas' && (favorites || []).map((item: any) => (
               <TrackCard key={`fav-${item.id}`} track={item} onPress={() => playTrack(item)} />
             ))}
 

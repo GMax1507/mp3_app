@@ -1,59 +1,97 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, SafeAreaView, Image, TouchableOpacity } from 'react-native';
-import { jamendoApi, JamendoTrack } from '../services/jamendoApi';
-import TrackCard from '../components/TrackCard';
-import { usePlayer } from '../context/PlayerContext';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { usePlayer } from '../context/PlayerContext';
+import { useTheme } from '../context/ThemeContext';
+import TrackCard from '../components/TrackCard';
 
 export default function Home() {
-  const [tracks, setTracks] = useState<JamendoTrack[]>([]);
-  const { playTrack, currentTrack, isPlaying, togglePlayPause } = usePlayer();
+  // Puxando os controles de reprodução do seu PlayerContext
+  const { currentTrack, recentTracks, playTrack, isPlaying, togglePlayPause } = usePlayer();
+  const { themeColors } = useTheme();
 
-  useEffect(() => {
-    jamendoApi.getPopularTracks(10).then(setTracks);
-  }, []);
+  // Função que gerencia o clique no Card de Destaque
+  const handleCardPress = () => {
+    if (currentTrack) {
+      // Se já tem uma música no player, ela pausa ou despausa
+      if (togglePlayPause) togglePlayPause();
+    } else if (recentTracks && recentTracks.length > 0) {
+      // Se não tem nada tocando, mas tem histórico, toca a última ouvida
+      playTrack(recentTracks[0]);
+    }
+  };
 
   return (
-    <LinearGradient colors={['#0f1123', '#1a1c3d']} style={{ flex: 1 }}>
+    <LinearGradient colors={themeColors} style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView>
+        <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+          
+          {/* CABEÇALHO */}
           <View style={styles.header}>
-            <Text style={styles.greeting}>Bem-vindo</Text>
-            <Text style={styles.subGreeting}>O que você quer ouvir hoje?</Text>
+            <Text style={styles.welcomeText}>Bem-vindo</Text>
+            <Text style={styles.subtitleText}>O que você quer ouvir hoje?</Text>
           </View>
 
-          {/* CARD DE DESTAQUE DINÂMICO */}
-          <LinearGradient colors={['#6a5ae0', '#a044ff']} style={styles.featuredCard}>
-             <View style={styles.featuredInfo}>
-                <Image 
-                  source={{ uri: currentTrack?.album_image || 'https://via.placeholder.com/150' }} 
-                  style={styles.featuredImg} 
-                />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.featuredTitle} numberOfLines={1}>
-                    {currentTrack?.name || "Selecione uma música"}
-                  </Text>
-                  <Text style={styles.featuredArtist}>
-                    {currentTrack?.artist_name || "Jamendo Music"}
-                  </Text>
-                  
-                  {/* Barra de Progresso Simbólica */}
-                  <View style={styles.progressContainer}>
-                    <View style={[styles.progressBar, { width: isPlaying ? '60%' : '10%' }]} />
-                  </View>
+          {/* CARD DE MÚSICA ATUAL - AGORA TOTALMENTE FUNCIONAL */}
+          <TouchableOpacity 
+            activeOpacity={0.85} 
+            style={styles.currentTrackCard}
+            onPress={handleCardPress}
+          >
+            <LinearGradient 
+              colors={['#8a2be2', '#4b0082']} 
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.cardGradient}
+            >
+              <View style={styles.cardInfo}>
+                <View style={styles.albumArtPlaceholder}>
+                   {currentTrack?.album_image ? (
+                     <Image source={{ uri: currentTrack.album_image }} style={styles.albumArt} />
+                   ) : (
+                     <Ionicons name="musical-notes" size={30} color="white" />
+                   )}
                 </View>
-                
-                <TouchableOpacity onPress={togglePlayPause} style={styles.mainPlayBtn}>
-                  <Ionicons name={isPlaying ? "pause" : "play"} size={30} color="#6a5ae0" />
-                </TouchableOpacity>
-             </View>
-          </LinearGradient>
+                <View style={styles.textContainer}>
+                  <Text style={styles.nowPlayingTitle} numberOfLines={1}>
+                    {currentTrack ? currentTrack.name : 'Toque para iniciar'}
+                  </Text>
+                  <Text style={styles.nowPlayingArtist} numberOfLines={1}>
+                    {currentTrack ? currentTrack.artist_name : 'Nenhuma faixa selecionada'}
+                  </Text>
+                </View>
+              </View>
 
+              {/* O ÍCONE MUDA DINAMICAMENTE ENTRE PLAY E PAUSE */}
+              <View style={styles.playCircle}>
+                <Ionicons 
+                  name={isPlaying ? "pause" : "play"} 
+                  size={32} 
+                  color="#8a2be2" 
+                  style={!isPlaying ? { marginLeft: 4 } : {}} 
+                />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* LISTA DE RECENTES */}
           <Text style={styles.sectionTitle}>Tocadas recentemente</Text>
-          {tracks.map(item => (
-            <TrackCard key={item.id} track={item} onPress={() => playTrack(item)} />
-          ))}
+          
+          <View style={styles.trackList}>
+            {recentTracks && recentTracks.length > 0 ? (
+              recentTracks.map((track: any) => (
+                <TrackCard 
+                  key={`home-recent-${track.id}`} 
+                  track={track} 
+                  onPress={() => playTrack(track)} 
+                />
+              ))
+            ) : (
+              <Text style={styles.emptyText}>As músicas que você ouvir aparecerão aqui.</Text>
+            )}
+          </View>
+
         </ScrollView>
       </SafeAreaView>
     </LinearGradient>
@@ -61,16 +99,51 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  header: { padding: 25, marginTop: 10 },
-  greeting: { color: 'white', fontSize: 28, fontWeight: 'bold' },
-  subGreeting: { color: '#a0a3bd', fontSize: 16 },
-  featuredCard: { margin: 20, borderRadius: 25, padding: 20 },
-  featuredInfo: { flexDirection: 'row', alignItems: 'center' },
-  featuredImg: { width: 80, height: 80, borderRadius: 15, backgroundColor: '#3d4185' },
-  featuredTitle: { color: 'white', fontSize: 18, fontWeight: 'bold', marginLeft: 15 },
-  featuredArtist: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginLeft: 15 },
-  progressContainer: { height: 4, backgroundColor: 'rgba(255,255,255,0.3)', borderRadius: 2, marginLeft: 15, marginTop: 10, width: '80%' },
-  progressBar: { height: 4, backgroundColor: 'white', borderRadius: 2 },
-  mainPlayBtn: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'white', justifyContent: 'center', alignItems: 'center', marginLeft: 10 },
-  sectionTitle: { color: 'white', fontSize: 20, fontWeight: 'bold', marginLeft: 25, marginBottom: 10 }
+  container: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 120 },
+  header: { marginBottom: 25 },
+  welcomeText: { color: 'white', fontSize: 28, fontWeight: 'bold' },
+  subtitleText: { color: '#6e7191', fontSize: 16, marginTop: 4 },
+  currentTrackCard: {
+    height: 140,
+    borderRadius: 30,
+    overflow: 'hidden',
+    marginBottom: 30,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  cardGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 25,
+  },
+  cardInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  albumArtPlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden'
+  },
+  albumArt: { width: '100%', height: '100%' },
+  textContainer: { marginLeft: 15, flex: 1 },
+  nowPlayingTitle: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  nowPlayingArtist: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginTop: 2 },
+  playCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sectionTitle: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 20 },
+  trackList: { width: '100%' },
+  emptyText: { color: '#6e7191', fontSize: 14, textAlign: 'center', marginTop: 20 },
 });
