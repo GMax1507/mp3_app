@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// 1. Alterado o import para usar a API estável legada compatível com SDK 54+
+import * as FileSystem from 'expo-file-system/legacy';
 
 const PlayerContext = createContext<any>(null);
 
@@ -8,12 +10,9 @@ export const PlayerProvider = ({ children }: any) => {
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [currentTrack, setCurrentTrack] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  
-  // Inicializa como arrays vazios para evitar erros de leitura antes do carregamento do storage
   const [favorites, setFavorites] = useState<any[]>([]);
   const [recentTracks, setRecentTracks] = useState<any[]>([]);
 
-  // 1. Carrega os dados salvos no celular ao abrir o app
   useEffect(() => {
     loadStorageData();
   }, []);
@@ -29,29 +28,42 @@ export const PlayerProvider = ({ children }: any) => {
     }
   }
 
-  // 2. Função para dar Play e salvar nos Recentes (Com suporte ao Modo Offline)
+  // Gera o caminho local permanente do arquivo de áudio
+  const getLocalTrackUri = (trackId: string) => {
+    return `${FileSystem.documentDirectory}track_${trackId}.mp3`;
+  };
+
+  // Função principal de reprodução
   async function playTrack(track: any) {
     try {
       if (sound) {
         await sound.unloadAsync();
       }
 
-      // Ativando o download prévio e cache local do streaming de áudio
+      const localUri = getLocalTrackUri(track.id);
+      
+      // Valida se o arquivo já existe fisicamente no celular usando a API estável
+      const fileInfo = await FileSystem.getInfoAsync(localUri);
+      
+      let sourceUri = track.audio;
+
+      if (fileInfo.exists) {
+        sourceUri = localUri;
+        console.log("SUCESSO: Tocando música localmente em modo OFFLINE!");
+      } else {
+        console.log("Tocando via streaming ONLINE e baixando cache...");
+        downloadTrackInBackground(track);
+      }
+
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: track.audio },
-        { 
-          shouldPlay: true,
-          // --- ATIVAÇÃO DO MODO OFFLINE ---
-          // Força o ecossistema do Expo a baixar a faixa para o armazenamento temporário enquanto toca
-          downloadFirst: true 
-        }
+        { uri: sourceUri },
+        { shouldPlay: true }
       );
 
       setSound(newSound);
       setCurrentTrack(track);
       setIsPlaying(true);
 
-      // Lógica de Recentes: Adiciona no topo, remove se já existia e limita a 10 músicas
       const filteredRecents = (recentTracks || []).filter(t => t.id !== track.id);
       const newRecents = [track, ...filteredRecents].slice(0, 10);
       
@@ -66,7 +78,22 @@ export const PlayerProvider = ({ children }: any) => {
     }
   }
 
-  // 3. Função Play/Pause
+  // Realiza o download em background para persistência física do arquivo
+  async function downloadTrackInBackground(track: any) {
+    try {
+      const localUri = getLocalTrackUri(track.id);
+      const fileInfo = await FileSystem.getInfoAsync(localUri);
+
+      if (!fileInfo.exists && track.audio) {
+        console.log(`Iniciando download de: ${track.name}`);
+        await FileSystem.downloadAsync(track.audio, localUri);
+        console.log(`Concluído! ${track.name} está pronta para uso offline.`);
+      }
+    } catch (err) {
+      console.log("Erro no download em background:", err);
+    }
+  }
+
   async function togglePlayPause() {
     if (!sound) return;
     if (isPlaying) {
@@ -78,7 +105,6 @@ export const PlayerProvider = ({ children }: any) => {
     }
   }
 
-  // 4. Função Curtir/Descurtir
   async function toggleFavorite(track: any) {
     const currentFavs = favorites || [];
     const isFav = currentFavs.find(f => f.id === track.id);
@@ -88,6 +114,7 @@ export const PlayerProvider = ({ children }: any) => {
       newFavorites = currentFavs.filter(f => f.id !== track.id);
     } else {
       newFavorites = [...currentFavs, track];
+      downloadTrackInBackground(track);
     }
 
     setFavorites(newFavorites);

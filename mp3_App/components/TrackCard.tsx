@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system/legacy'; // Usando a mesma API estável do seu context
 
 type TrackCardProps = {
   track: any;
@@ -8,8 +9,23 @@ type TrackCardProps = {
 };
 
 export default function TrackCard({ track, onPress }: TrackCardProps) {
-  
-  // Função nativa de Compartilhamento Social
+  const [isDownloaded, setIsDownloaded] = useState(false);
+
+  // Efeito para verificar se a música específica já está salva no dispositivo
+  useEffect(() => {
+    checkIfDownloaded();
+  }, [track.id]);
+
+  async function checkIfDownloaded() {
+    try {
+      const localUri = `${FileSystem.documentDirectory}track_${track.id}.mp3`;
+      const fileInfo = await FileSystem.getInfoAsync(localUri);
+      setIsDownloaded(fileInfo.exists);
+    } catch (error) {
+      setIsDownloaded(false);
+    }
+  }
+
   const handleShare = async () => {
     try {
       await Share.share({
@@ -23,7 +39,6 @@ export default function TrackCard({ track, onPress }: TrackCardProps) {
 
   return (
     <View style={styles.cardContainer}>
-      {/* Botão principal que toca a música ao clicar no card */}
       <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.clickableArea}>
         <View style={styles.albumArtPlaceholder}>
           {track.album_image ? (
@@ -35,11 +50,24 @@ export default function TrackCard({ track, onPress }: TrackCardProps) {
         
         <View style={styles.textContainer}>
           <Text style={styles.trackName} numberOfLines={1}>{track.name}</Text>
-          <Text style={styles.artistName} numberOfLines={1}>{track.artist_name || 'Jamendo Music'}</Text>
+          
+          <View style={styles.artistRow}>
+            <Text style={styles.artistName} numberOfLines={1}>
+              {track.artist_name || 'Jamendo Music'}
+            </Text>
+            
+            {/* SINAL INDICATIVO DE MÚSICA BAIXADA (OFFLINE) */}
+            {isDownloaded && (
+              <View style={styles.badgeOffline}>
+                <Ionicons name="checkmark-circle" size={14} color="#10b981" />
+                <Text style={styles.badgeText}>Disponível Offline</Text>
+              </View>
+            )}
+          </View>
         </View>
       </TouchableOpacity>
 
-      {/* ÍCONE DE COMPARTILHAMENTO SOCIAL (Ao lado do Play) */}
+      {/* Ícone de Compartilhar */}
       <TouchableOpacity onPress={handleShare} style={styles.shareActionBtn}>
         <Ionicons name="share-social-outline" size={20} color="#6e7191" />
       </TouchableOpacity>
@@ -91,10 +119,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
   },
+  artistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+    flexWrap: 'wrap',
+  },
   artistName: {
     color: '#94a3b8',
     fontSize: 12,
-    marginTop: 3,
+    marginRight: 8,
+  },
+  // Estilo do indicador verde de download
+  badgeOffline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  badgeText: {
+    color: '#10b981',
+    fontSize: 10,
+    fontWeight: '600',
+    marginLeft: 3,
   },
   shareActionBtn: {
     padding: 8,

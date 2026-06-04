@@ -1,29 +1,31 @@
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
+// Importação dos componentes de Área Segura recomendados pela documentação
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PlayerProvider } from '../context/PlayerContext';
-import { ThemeProvider, useTheme } from '../context/ThemeContext'; // Importando o tema
+import { ThemeProvider, useTheme } from '../context/ThemeContext'; 
 import MiniPlayer from '../components/MiniPlayer';
 import { Ionicons } from '@expo/vector-icons';
 
-// Criamos um componente interno para aplicar o estilo correto baseado no tema ativo
+// Componente interno com as configurações de estilo baseadas na área segura
 function NavigationTabs() {
   const { themeColors } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // Esconde aquela barra superior padrão feia
-        tabBarActiveTintColor: '#8a2be2', // Cor do ícone ativo (Roxo)
-        tabBarInactiveTintColor: '#6e7191', // Cor do ícone inativo
+        headerShown: false, 
+        tabBarActiveTintColor: '#8a2be2', 
+        tabBarInactiveTintColor: '#6e7191', 
         tabBarStyle: {
-          backgroundColor: '#131424', // Cor de fundo da barra inferior
+          backgroundColor: '#131424', 
           borderTopWidth: 1,
           borderTopColor: 'rgba(255, 255, 255, 0.05)',
-          height: 60,
+          height: 65, // Aumentado levemente para melhor ergonomia de toque
           paddingBottom: 8,
           paddingTop: 8,
-          position: 'absolute', // Deixa a barra flutuando sobre o gradiente da tela
+          position: 'absolute', 
           bottom: 0,
           left: 0,
           right: 0,
@@ -77,35 +79,44 @@ function NavigationTabs() {
   );
 }
 
-// Layout principal que envolve o app com os Providers
+// Layout principal que envolve o app com os Providers e com a Área Segura
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <PlayerProvider>
-        <View style={styles.container}>
-          <StatusBar style="light" />
-          
-          {/* Renderiza a navegação por abas que corrigimos */}
-          <NavigationTabs />
-          
-          {/* O MiniPlayer continua fixo logo acima da barra de abas */}
-          <View style={styles.playerWrapper}>
-            <MiniPlayer />
-          </View>
-        </View>
-      </PlayerProvider>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      {/* O SafeAreaView garante o recuo contra botões virtuais ou notches físicos */}
+      <SafeAreaView style={styles.safeArea} edges={['bottom', 'top']}>
+        <ThemeProvider>
+          <PlayerProvider>
+            <View style={styles.container}>
+              <StatusBar style="light" />
+              
+              {/* Renderiza a navegação por abas */}
+              <NavigationTabs />
+              
+              {/* O MiniPlayer acompanha o novo alinhamento da barra de abas (altura 65) */}
+              <View style={styles.playerWrapper}>
+                <MiniPlayer />
+              </View>
+            </View>
+          </PlayerProvider>
+        </ThemeProvider>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#000000', // Garante que as áreas extras do sistema fiquem pretas
+  },
   container: {
     flex: 1,
     backgroundColor: '#000000',
   },
   playerWrapper: {
     position: 'absolute',
-    bottom: 60, // Posiciona o miniplayer exatamente ACIMA da barra de navegação (que tem altura 60)
+    bottom: 65, // Ajustado para 65 para sincronizar perfeitamente com a nova altura da aba
     left: 0,
     right: 0,
     paddingHorizontal: 10,
